@@ -1,0 +1,28 @@
+{
+  "name": "conversation-tree",
+  "version": "1.0.0",
+  "description": "Maps conversation topics as a navigable tree structure",
+  "main": "src/index.ts",
+  "scripts": {
+    "analyze": "ts-node src/index.ts analyze",
+    "tree": "ts-node src/index.ts tree",
+    "where": "ts-node src/index.ts where",
+    "start": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@deepgram/sdk": "^5.0.0",
+    "@google/genai": "^1.46.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "groq-sdk": "^1.1.2",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.18.1",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.4.0"
+  }
+}

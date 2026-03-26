@@ -1,0 +1,189 @@
+{
+  "nodes": {
+    "topic-0": {
+      "id": "topic-0",
+      "label": "Conversation Root",
+      "summary": "Root of the conversation tree",
+      "status": "active",
+      "parentId": null,
+      "children": [
+        "topic-1",
+        "topic-8",
+        "topic-9"
+      ],
+      "messageIndices": [],
+      "depth": 0,
+      "topicType": "root",
+      "createdAtIndex": 0
+    },
+    "topic-1": {
+      "id": "topic-1",
+      "label": "Japan Trip",
+      "summary": "Jake discusses his upcoming trip to Japan with Mia.",
+      "status": "active",
+      "parentId": "topic-0",
+      "children": [
+        "topic-2",
+        "topic-3",
+        "topic-4"
+      ],
+      "messageIndices": [
+        0,
+        1,
+        2,
+        22,
+        18,
+        19,
+        20,
+        23,
+        24,
+        25,
+        26
+      ],
+      "depth": 1,
+      "topicType": "main_topic",
+      "createdAtIndex": 0
+    },
+    "topic-2": {
+      "id": "topic-2",
+      "label": "Itinerary",
+      "summary": "Discussing specific places to visit in Japan",
+      "status": "paused",
+      "parentId": "topic-1",
+      "children": [],
+      "messageIndices": [
+        3
+      ],
+      "depth": 2,
+      "topicType": "subtopic",
+      "createdAtIndex": 3,
+      "pausedAtIndex": 5
+    },
+    "topic-3": {
+      "id": "topic-3",
+      "label": "Budget",
+      "summary": "Discussing the cost of the trip to Japan",
+      "status": "paused",
+      "parentId": "topic-1",
+      "children": [],
+      "messageIndices": [
+        5
+      ],
+      "depth": 2,
+      "topicType": "subtopic",
+      "createdAtIndex": 5,
+      "pausedAtIndex": 7
+    },
+    "topic-4": {
+      "id": "topic-4",
+      "label": "Accommodation",
+      "summary": "Discussing hotel and hostel options for the trip",
+      "status": "paused",
+      "parentId": "topic-1",
+      "children": [
+        "topic-5"
+      ],
+      "messageIndices": [
+        7,
+        0,
+        1,
+        3,
+        5
+      ],
+      "depth": 2,
+      "topicType": "subtopic",
+      "createdAtIndex": 7,
+      "pausedAtIndex": 8
+    },
+    "topic-5": {
+      "id": "topic-5",
+      "label": "Onsen Etiquette",
+      "summary": "Discussing the rules and customs for visiting onsens in Japan",
+      "status": "paused",
+      "parentId": "topic-4",
+      "children": [
+        "topic-6"
+      ],
+      "messageIndices": [
+        8
+      ],
+      "depth": 3,
+      "topicType": "subtopic",
+      "createdAtIndex": 8,
+      "pausedAtIndex": 11
+    },
+    "topic-6": {
+      "id": "topic-6",
+      "label": "Sam's Tattoo",
+      "summary": "Mia mentions Sam's new tattoo, which is unrelated to the current topic of accommodation",
+      "status": "paused",
+      "parentId": "topic-5",
+      "children": [
+        "topic-7"
+      ],
+      "messageIndices": [
+        11,
+        6,
+        8,
+        9,
+        12,
+        13
+      ],
+      "depth": 4,
+      "topicType": "tangent",
+      "createdAtIndex": 11,
+      "pausedAtIndex": 15
+    },
+    "topic-7": {
+      "id": "topic-7",
+      "label": "Social Media Detox",
+      "summary": "Jake mentions his social media detox and not checking Instagram in a week.",
+      "status": "paused",
+      "parentId": "topic-6",
+      "children": [],
+      "messageIndices": [
+        15
+      ],
+      "depth": 5,
+      "topicType": "tangent",
+      "createdAtIndex": 15,
+      "pausedAtIndex": 17
+    },
+    "topic-8": {
+      "id": "topic-8",
+      "label": "Reading Habits",
+      "summary": "Jake talks about reading more and finishing two books during his social media detox.",
+      "status": "paused",
+      "parentId": "topic-0",
+      "children": [],
+      "messageIndices": [
+        17
+      ],
+      "depth": 1,
+      "topicType": "main_topic",
+      "createdAtIndex": 17,
+      "pausedAtIndex": 19
+    },
+    "topic-9": {
+      "id": "topic-9",
+      "label": "Book Discussion",
+      "summary": "The conversation progresses to discussing specific books, including Shogun and Project Hail Mary.",
+      "status": "paused",
+      "parentId": "topic-0",
+      "children": [],
+      "messageIndices": [
+        19,
+        12,
+        13,
+        15,
+        17
+      ],
+      "depth": 1,
+      "topicType": "progression",
+      "createdAtIndex": 19,
+      "pausedAtIndex": 22
+    }
+  },
+  "rootId": "topic-0",
+  "activeTopicId": "topic-1"
+}

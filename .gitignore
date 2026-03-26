@@ -1,0 +1,12 @@
+node_modules/
+dist/
+output/
+
+.env
+.env.local
+.env.*
+
+*.js
+*.d.ts
+*.js.map
+!src/**/*.ts

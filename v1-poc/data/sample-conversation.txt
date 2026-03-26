@@ -1,0 +1,34 @@
+[Alice]: Let's talk about the project timeline. Where are we with the Q3 deliverables?
+[Bob]: We're on track for most items. The API integration is done, but the frontend is behind by about two weeks.
+[Alice]: Two weeks behind? What's blocking the frontend team?
+[Bob]: Mainly the design review process. We're waiting on stakeholder feedback for the new dashboard layout.
+[Carol]: The stakeholders said they'd have comments by Friday. I followed up yesterday.
+[Alice]: Okay good. What about the mobile app? Is that still on schedule?
+[Bob]: Mobile is actually ahead of schedule. The new auth flow shipped last week.
+[Carol]: Speaking of the auth flow, did anyone see the security audit report that came in?
+[Bob]: Oh yeah, I skimmed it. There were a couple of medium-severity findings around token storage.
+[Carol]: We should probably address those before the Q3 release. The auditor flagged our refresh token rotation.
+[Alice]: Let's make that a priority. Can you two put together a remediation plan by Wednesday?
+[Bob]: Sure. We'll need to coordinate with the infrastructure team on that.
+[Carol]: Speaking of infrastructure, did you hear they're migrating us to the new Kubernetes cluster next month?
+[Bob]: Wait, next month? That's going to conflict with our release window.
+[Alice]: That's a good point. I'll flag that with the platform team. But let's not get sidetracked — going back to the frontend delays, can we parallelize some of the work while we wait for stakeholder feedback?
+[Bob]: We could start on the data visualization components. Those don't depend on the dashboard layout approval.
+[Alice]: Great, let's do that. Bob, can you reassign two engineers to the data viz work?
+[Bob]: Yeah, I'll shuffle the sprint board today. We should also think about the resource allocation for Q4 planning.
+[Alice]: True. What's our headcount situation looking like?
+[Bob]: We have two open reqs. One senior frontend and one backend. HR says they have candidates in the pipeline.
+[Carol]: The backend role — are we still looking for someone with distributed systems experience?
+[Bob]: Yes, especially with the Kubernetes migration coming up, that's even more important now.
+[Alice]: Agreed. Let's make sure the job description emphasizes that. Carol, can you update it?
+[Carol]: On it. Oh, before I forget — the team offsite is coming up in two weeks. Have we finalized the agenda?
+[Alice]: Not yet. I was thinking we do a retro in the morning, then roadmap planning in the afternoon.
+[Bob]: Can we also carve out time for a team building activity? Last time the escape room was a big hit.
+[Carol]: I loved that! There's a new one downtown that has great reviews.
+[Bob]: Let's book it. I'll send around a poll for time preferences.
+[Alice]: Sounds good. Alright, back to the Q3 timeline — with the frontend parallelization and the security fixes, are we still confident we can hit the August 15th release date?
+[Bob]: It'll be tight but doable if we start the data viz work this week and get the security fixes scoped by Wednesday.
+[Alice]: Okay, let's lock that in. Any other blockers we should discuss?
+[Carol]: One thing — the third-party payment provider is deprecating their v2 API in September. We should migrate to v3 before the release.
+[Bob]: Good catch. That's probably a two-week effort. We should factor that into the timeline.
+[Alice]: Add it to the sprint. Alright, I think we've covered the major items. Let's sync again Thursday.

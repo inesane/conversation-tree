@@ -1,0 +1,83 @@
+[Jake]: Hey what are you guys up to this weekend? I have nothing planned for once
+[Mia]: Same honestly. I was thinking about checking out that new farmer's market on Saturday
+[Sam]: Oh the one on Elm Street? I heard it's really good
+[Mia]: Yeah that one. Apparently they have this amazing honey vendor and fresh pasta
+[Jake]: I'm down for that. What time does it open?
+[Mia]: I think 8am but we don't need to be there that early lol
+[Sam]: Let's do like 10? I'm not waking up early on a Saturday
+[Jake]: 10 works. We could grab brunch after too
+[Mia]: Ooh yes. There's that new place next to the bookstore, Maple & Vine or something
+[Sam]: I've been wanting to try that place. Did either of you see the reviews?
+[Jake]: No but the menu looked solid. They do like a whole shakshuka thing
+[Mia]: Nice. Okay so farmer's market then brunch, love it
+[Sam]: Perfect. Oh that reminds me — did you guys hear about Danny's birthday next weekend?
+[Mia]: Wait is that already next weekend?
+[Sam]: Yeah the 15th. He's doing a thing at his place, kind of a chill house party vibe
+[Jake]: Oh man I totally forgot. We need to figure out a gift
+[Mia]: What is he even into these days? I feel like I haven't hung out with him in forever
+[Sam]: He's been super into cooking lately. Like he posts these elaborate meals on his stories all the time
+[Jake]: Really? I had no idea. That's cool though, makes gift shopping easier
+[Mia]: We could get him a nice knife set or something. Or a cookbook?
+[Sam]: I was thinking maybe one of those cooking class experiences? Like you book a class for a group
+[Jake]: That's actually a great idea. We could all go together
+[Mia]: How much do those usually cost?
+[Sam]: I saw some for like 60-80 bucks per person. Not bad if we split it as a group gift
+[Jake]: Yeah I'd pitch in for that. Let's do it
+[Mia]: Same. Sam can you look into booking one? Maybe Italian or Japanese cooking
+[Sam]: On it. I'll send you guys some options tonight
+[Jake]: Cool. Oh speaking of Japanese stuff, have you guys watched that new show on Netflix? The one set in Tokyo
+[Mia]: Midnight Diner? Or is there a new one?
+[Jake]: No it's called Tokyo Stories or something. Just came out last week
+[Sam]: Haven't seen it but I've been meaning to start something new. I just finished Severance season 2
+[Mia]: Oh my god Severance. That show is insane. The finale was so good
+[Sam]: Right? That twist with Helly was wild. I did not see that coming
+[Jake]: Okay no spoilers I'm only on episode 4
+[Mia]: Oh sorry sorry. But you need to catch up it's so worth it
+[Jake]: I know I know. I've just been busy with the new job and everything
+[Sam]: Oh right how's the new job going? You started like a month ago right?
+[Jake]: Yeah just over a month. It's going pretty well actually. The team is great
+[Mia]: That's awesome. What are you working on again?
+[Jake]: Mostly frontend stuff. We're rebuilding their whole dashboard. It's a lot of React
+[Sam]: Nice. Are you fully remote or do you go in?
+[Jake]: Hybrid. Three days in the office, two from home. Honestly I kind of like having the structure
+[Mia]: I wish my job would do hybrid. We're fully in office five days and it's killing me
+[Sam]: That's rough. Have you thought about switching?
+[Mia]: Yeah I've been low-key looking. Nothing serious yet but I've updated my resume
+[Jake]: You should. The market's actually decent right now for design roles
+[Mia]: That's what I keep hearing. I just need to actually commit to applying you know
+[Sam]: I can send you some postings. My company is hiring a UX designer actually
+[Mia]: Wait really? What's the company like?
+[Sam]: It's a mid-size startup, about 200 people. Fully remote, good benefits. I like it
+[Mia]: That sounds amazing honestly. Yeah send me the posting
+[Sam]: Will do. Oh that reminds me of something completely random — I ran into professor Chen at the grocery store yesterday
+[Jake]: Professor Chen! From college? The stats guy?
+[Sam]: Yeah! He remembered us and everything. He asked how we were doing
+[Mia]: That's so funny. I literally had a dream about being back in his class last week
+[Jake]: haha that's such a specific thing to dream about
+[Mia]: I know right. I think it's because I've been doing a lot of data analysis at work and it reminded me of his homework
+[Sam]: He looked good though. Said he's retiring next year
+[Jake]: Wow that's the end of an era. We should go to his retirement thing if they have one
+[Mia]: Definitely. Those stats classes were actually some of my favorites in hindsight
+[Sam]: Same. Remember when Jake fell asleep during the midterm review?
+[Jake]: Oh come on that was ONE time and I was working two jobs
+[Mia]: hahaha and he woke up and answered the question perfectly
+[Sam]: Legend. Anyway what were we talking about? Oh right the weekend
+[Jake]: Yeah the farmer's market Saturday. Are we still doing brunch after?
+[Mia]: For sure. Should we invite anyone else or keep it just us three?
+[Sam]: Let's keep it chill, just us. We can always do a bigger thing later
+[Jake]: Agreed. I miss just hanging out without a huge group
+[Mia]: Same. Remember when we used to do Sunday movie nights at Sam's place?
+[Sam]: We should bring that back honestly
+[Jake]: I'm so down. We could start this Sunday if anyone's free
+[Mia]: I'm free. Sam?
+[Sam]: Yeah let's do it. I'll make popcorn. Jake you bring drinks
+[Jake]: Deal. What should we watch?
+[Mia]: Well Jake needs to catch up on Severance so maybe not that. How about a movie?
+[Sam]: We could finally watch Dune Part Two. I still haven't seen it
+[Jake]: Same. Okay Dune it is. Your place at like 7?
+[Sam]: Works for me
+[Mia]: Perfect. So Saturday farmer's market and brunch, Sunday movie night. This is shaping up to be a great weekend
+[Jake]: Best weekend plan we've had in a while honestly
+[Sam]: Facts. Alright I gotta run but I'll send the cooking class options tonight and the job posting to Mia
+[Mia]: Thanks Sam! See you guys Saturday
+[Jake]: Later!
