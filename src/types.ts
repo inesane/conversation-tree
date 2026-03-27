@@ -63,15 +63,8 @@ export interface TreeStateSummary {
   activeTopicSummary: string;
   activeTopicRunningSummary?: string;
   topicPath: string[];
-  recentPausedTopics: {
-    id: string;
-    label: string;
-    summary: string;
-    runningSummary?: string;
-    status: TopicStatus;
-    depth: number;
-    topicType: TopicType;
-  }[];
+  treeStructure: string;
+  conversationSummary?: string;
   totalTopicCount: number;
 }
 

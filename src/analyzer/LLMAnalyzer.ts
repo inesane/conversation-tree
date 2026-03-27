@@ -4,6 +4,7 @@ import {
   buildAnalysisPrompt,
   buildInitialTopicPrompt,
   buildSummarizationPrompt,
+  buildConversationSummaryPrompt,
 } from "./prompts";
 
 export class LLMAnalyzer {
@@ -64,6 +65,26 @@ export class LLMAnalyzer {
       topicLabel,
       existingSummary,
       messages
+    );
+    const responseText = await this.callLLM(prompt);
+
+    try {
+      const parsed = this.extractJSON(responseText);
+      return parsed.summary || existingSummary || "";
+    } catch {
+      return existingSummary || "";
+    }
+  }
+
+  async summarizeConversation(
+    existingSummary: string | undefined,
+    treeStructure: string,
+    recentMessages: Message[]
+  ): Promise<string> {
+    const prompt = buildConversationSummaryPrompt(
+      existingSummary,
+      treeStructure,
+      recentMessages
     );
     const responseText = await this.callLLM(prompt);
 

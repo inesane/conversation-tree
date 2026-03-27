@@ -7,11 +7,14 @@ import { parseConversation } from "../utils/parser";
 const CONFIDENCE_THRESHOLD = 0.7;
 const SUMMARIZE_EVERY_N_MESSAGES = 8;
 
+const CONVERSATION_SUMMARY_INTERVAL = 3; // Update conversation summary every N analysis cycles
+
 export class ConversationTracker {
   private tree: ConversationTree;
   private analyzer: LLMAnalyzer;
   private messages: Message[] = [];
   private initialized: boolean = false;
+  private analysisCycleCount: number = 0;
 
   constructor(model?: string) {
     this.tree = new ConversationTree();
@@ -92,6 +95,15 @@ export class ConversationTracker {
 
       // Periodically summarize the active topic
       await this.maybeSummarize(i === windows.length - 1, onProgress);
+
+      // Periodically update the conversation-level summary
+      this.analysisCycleCount++;
+      if (
+        this.analysisCycleCount % CONVERSATION_SUMMARY_INTERVAL === 0 ||
+        i === windows.length - 1
+      ) {
+        await this.updateConversationSummary(onProgress);
+      }
     }
 
     // Final summarization pass for all topics that have messages but no summary
@@ -281,6 +293,25 @@ export class ConversationTracker {
     }
   }
 
+  private async updateConversationSummary(
+    onProgress?: (stage: string, detail: string) => void
+  ): Promise<void> {
+    const treeState = this.tree.getStateSummary();
+    if (treeState.totalTopicCount === 0) return;
+
+    onProgress?.("summarizing", "Updating conversation overview...");
+
+    const summary = await this.analyzer.summarizeConversation(
+      this.tree.getConversationSummary(),
+      treeState.treeStructure,
+      this.messages
+    );
+
+    if (summary) {
+      this.tree.setConversationSummary(summary);
+    }
+  }
+
   // --- Incremental / live mode ---
 
   async processNewMessages(
@@ -343,6 +374,12 @@ export class ConversationTracker {
     const msgsSinceSummary = this.tree.getMessagesSinceLastSummary(active.id);
     if (msgsSinceSummary >= SUMMARIZE_EVERY_N_MESSAGES) {
       await this.summarizeTopic(active.id);
+    }
+
+    // Update conversation summary periodically
+    this.analysisCycleCount++;
+    if (this.analysisCycleCount % CONVERSATION_SUMMARY_INTERVAL === 0) {
+      await this.updateConversationSummary();
     }
 
     return { tree: this.tree, changed: true };

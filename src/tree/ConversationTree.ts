@@ -198,23 +198,19 @@ export class ConversationTree {
     );
   }
 
+  private conversationSummary?: string;
+
+  setConversationSummary(summary: string): void {
+    this.conversationSummary = summary;
+  }
+
+  getConversationSummary(): string | undefined {
+    return this.conversationSummary;
+  }
+
   getStateSummary(): TreeStateSummary {
     const active = this.getActiveTopic();
     const path = this.getPath(active.id).map((n) => n.label);
-
-    // Only include the 5 most recently paused topics to keep prompt compact
-    const recentPausedTopics = this.getPausedTopics()
-      .sort((a, b) => (b.pausedAtIndex ?? 0) - (a.pausedAtIndex ?? 0))
-      .slice(0, 5)
-      .map((n) => ({
-        id: n.id,
-        label: n.label,
-        summary: n.runningSummary || n.summary,
-        runningSummary: n.runningSummary,
-        status: n.status,
-        depth: n.depth,
-        topicType: n.topicType,
-      }));
 
     const totalTopicCount = Array.from(this.nodes.values()).filter(
       (n) => n.topicType !== "root"
@@ -226,9 +222,63 @@ export class ConversationTree {
       activeTopicSummary: active.runningSummary || active.summary,
       activeTopicRunningSummary: active.runningSummary,
       topicPath: path,
-      recentPausedTopics,
+      treeStructure: this.renderTreeStructure(),
+      conversationSummary: this.conversationSummary,
       totalTopicCount,
     };
+  }
+
+  /**
+   * Renders the full tree as an indented text structure for LLM context.
+   * Shows all topics with their relationships, status, type, and brief summaries.
+   */
+  private renderTreeStructure(): string {
+    const root = this.getRoot();
+    if (root.children.length === 0) return "(no topics yet)";
+
+    const lines: string[] = [];
+    for (let i = 0; i < root.children.length; i++) {
+      this.renderNodeForLLM(root.children[i], "", i === root.children.length - 1, lines);
+    }
+    return lines.join("\n");
+  }
+
+  private renderNodeForLLM(
+    nodeId: string,
+    prefix: string,
+    isLast: boolean,
+    lines: string[]
+  ): void {
+    const node = this.nodes.get(nodeId);
+    if (!node) return;
+
+    const connector = isLast ? "└─" : "├─";
+    const statusIcon = node.id === this.activeTopicId ? "●" : "◐";
+    const statusLabel = node.id === this.activeTopicId ? "ACTIVE" : "paused";
+    const typeLabel = node.topicType === "main_topic" ? "" : ` (${node.topicType})`;
+
+    // Recent topics (paused within last 20 messages) get their summary
+    const isRecent = node.id === this.activeTopicId ||
+      (node.pausedAtIndex !== undefined &&
+        this.getActiveTopic().messageIndices.length > 0 &&
+        node.pausedAtIndex >= (Math.max(...this.getActiveTopic().messageIndices) - 30));
+
+    const summary = isRecent ? (node.runningSummary || node.summary) : node.summary;
+    const shortSummary = summary.length > 80 ? summary.slice(0, 77) + "..." : summary;
+
+    lines.push(
+      `${prefix}${connector} ${statusIcon} [${statusLabel}]${typeLabel} "${node.label}" — ${shortSummary}`
+    );
+
+    const childPrefix = prefix + (isLast ? "   " : "│  ");
+    for (let i = 0; i < node.children.length; i++) {
+      this.renderNodeForLLM(
+        node.children[i],
+        childPrefix,
+        i === node.children.length - 1,
+        lines
+      );
+    }
   }
 
   toJSON(): SerializedTree {

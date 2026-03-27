@@ -87,23 +87,23 @@ function buildTreeStateSection(state: TreeStateSummary): string {
     .filter((l) => l !== "Conversation Root")
     .join(" > ");
 
-  let section = `CURRENT TREE STATE:
-Active topic: "${state.activeTopicLabel}"
-Summary: ${state.activeTopicRunningSummary || state.activeTopicSummary}
-Path: ${pathStr}
-Total topics so far: ${state.totalTopicCount}`;
+  let section = "";
 
-  if (state.recentPausedTopics.length > 0) {
-    const pausedLines = state.recentPausedTopics
-      .map(
-        (t) =>
-          `  - "${t.label}" (${t.topicType}): ${t.runningSummary || t.summary}`
-      )
-      .join("\n");
+  // Conversation overview — gives the LLM the big picture
+  if (state.conversationSummary) {
+    section += `CONVERSATION SO FAR:
+${state.conversationSummary}
 
-    section += `\n\nRecently paused topics (potential return targets):
-${pausedLines}`;
+`;
   }
+
+  // Full tree structure — shows all topics and their relationships
+  section += `TOPIC TREE (shows how topics relate — children are subtopics/tangents of their parent):
+${state.treeStructure}
+
+CURRENTLY DISCUSSING: "${state.activeTopicLabel}"
+Path: ${pathStr}
+Summary: ${state.activeTopicRunningSummary || state.activeTopicSummary}`;
 
   return section;
 }
@@ -161,5 +161,39 @@ Write a concise 2-4 sentence summary covering:
 Respond with ONLY a valid JSON object:
 {
   "summary": "<2-4 sentence summary>"
+}`;
+}
+
+export function buildConversationSummaryPrompt(
+  existingSummary: string | undefined,
+  treeStructure: string,
+  recentMessages: Message[]
+): string {
+  const msgLines = recentMessages
+    .slice(-10)
+    .map((m) => `  ${m.speaker}: ${m.text}`)
+    .join("\n");
+
+  const existing = existingSummary
+    ? `\nEXISTING OVERVIEW:\n${existingSummary}\n\nUpdate this overview to incorporate the latest developments.`
+    : `\nCreate an initial overview of the conversation.`;
+
+  return `You are summarizing the overall flow of a conversation. This summary gives context for understanding what the conversation has covered and how topics connect.
+${existing}
+
+CURRENT TOPIC TREE:
+${treeStructure}
+
+MOST RECENT MESSAGES:
+${msgLines}
+
+Write a 2-4 sentence overview that captures:
+- The main subjects discussed
+- How the conversation flowed between topics
+- What the conversation is currently focused on
+
+Respond with ONLY a valid JSON object:
+{
+  "summary": "<2-4 sentence conversation overview>"
 }`;
 }
