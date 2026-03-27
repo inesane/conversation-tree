@@ -158,6 +158,43 @@
 
   #text-input:focus { border-color: #06b6d4; }
 
+  #audio-controls {
+    padding: 10px 16px;
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #audio-controls button {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #475569;
+    background: #334155;
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  #audio-controls button:hover {
+    background: #475569;
+    color: #e2e8f0;
+  }
+
+  #audio-controls button.active {
+    background: #052e16;
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+
+  #audio-status {
+    font-size: 11px;
+    color: #64748b;
+    margin-left: 4px;
+  }
+
   #input-hint {
     font-size: 11px;
     color: #475569;
@@ -259,6 +296,11 @@
       <span>Conversation</span>
       <span id="message-count">0 messages</span>
     </div>
+    <div id="audio-controls">
+      <button id="tab-capture-btn" onclick="toggleTabCapture()">Capture Tab Audio</button>
+      <button id="mic-capture-btn" onclick="toggleMicCapture()">Capture Mic</button>
+      <span id="audio-status"></span>
+    </div>
     <div id="messages"></div>
     <div id="input-area">
       <div id="speaker-row">
@@ -266,7 +308,7 @@
         <button id="analyze-btn" onclick="forceAnalyze()">Analyze Now</button>
       </div>
       <textarea id="text-input" placeholder="Type a message and press Enter..." rows="1"></textarea>
-      <div id="input-hint">Enter to send. The tree updates every ~12 messages or 45 seconds.</div>
+      <div id="input-hint">Enter to send, or use audio capture buttons above.</div>
     </div>
   </div>
 </div>
@@ -522,6 +564,151 @@ function esc(s) {
   const d = document.createElement('div');
   d.textContent = s || '';
   return d.innerHTML;
+}
+
+// ===== Audio Capture =====
+
+let audioCapture = null; // { stream, audioContext, processor, source, type }
+
+async function toggleTabCapture() {
+  if (audioCapture && audioCapture.type === 'tab') {
+    stopAudioCapture();
+    return;
+  }
+  if (audioCapture) stopAudioCapture(); // stop mic if running
+
+  try {
+    // Request tab audio capture — user picks which tab to share
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: false,
+      audio: true,
+    });
+
+    // Check we actually got an audio track
+    if (stream.getAudioTracks().length === 0) {
+      setAudioStatus('No audio track — make sure you check "Share tab audio"');
+      stream.getTracks().forEach(t => t.stop());
+      return;
+    }
+
+    // Stop the video track if one was included (some browsers force it)
+    stream.getVideoTracks().forEach(t => t.stop());
+
+    await startAudioPipeline(stream, 'tab');
+  } catch (err) {
+    if (err.name === 'NotAllowedError') {
+      setAudioStatus('Tab sharing cancelled');
+    } else {
+      setAudioStatus('Error: ' + err.message);
+    }
+  }
+}
+
+async function toggleMicCapture() {
+  if (audioCapture && audioCapture.type === 'mic') {
+    stopAudioCapture();
+    return;
+  }
+  if (audioCapture) stopAudioCapture(); // stop tab if running
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 }
+    });
+    await startAudioPipeline(stream, 'mic');
+  } catch (err) {
+    setAudioStatus('Mic access denied');
+  }
+}
+
+async function startAudioPipeline(stream, type) {
+  const sampleRate = 16000;
+
+  // Tell server to start Deepgram
+  ws.send(JSON.stringify({ type: 'start_audio', sampleRate: sampleRate, channels: 1 }));
+
+  // Wait for server to confirm Deepgram is ready
+  await new Promise((resolve) => {
+    const handler = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'audio_ready' || msg.type === 'error') {
+        ws.removeEventListener('message', handler);
+        if (msg.type === 'error') {
+          setAudioStatus('Server error: ' + msg.message);
+          stream.getTracks().forEach(t => t.stop());
+        }
+        resolve();
+      }
+    };
+    ws.addEventListener('message', handler);
+    // Timeout fallback
+    setTimeout(() => { ws.removeEventListener('message', handler); resolve(); }, 5000);
+  });
+
+  // Set up AudioContext to convert to 16kHz mono PCM
+  const audioContext = new AudioContext({ sampleRate: sampleRate });
+  const source = audioContext.createMediaStreamSource(stream);
+
+  // Use ScriptProcessorNode (deprecated but widely supported; AudioWorklet needs separate file)
+  const bufferSize = 4096;
+  const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+  processor.onaudioprocess = (e) => {
+    const inputData = e.inputBuffer.getChannelData(0);
+
+    // Convert float32 to int16 PCM
+    const pcm = new Int16Array(inputData.length);
+    for (let i = 0; i < inputData.length; i++) {
+      const s = Math.max(-1, Math.min(1, inputData[i]));
+      pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+
+    // Send as base64 to server
+    const bytes = new Uint8Array(pcm.buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    ws.send(JSON.stringify({ type: 'audio_data', audio: btoa(binary) }));
+  };
+
+  source.connect(processor);
+  processor.connect(audioContext.destination);
+
+  audioCapture = { stream, audioContext, processor, source, type };
+
+  // Update UI
+  const btn = type === 'tab' ? 'tab-capture-btn' : 'mic-capture-btn';
+  document.getElementById(btn).classList.add('active');
+  document.getElementById(btn).textContent = type === 'tab' ? 'Stop Tab Capture' : 'Stop Mic';
+  setAudioStatus(type === 'tab' ? 'Capturing tab audio...' : 'Capturing mic...');
+
+  // Handle stream ending (user clicks "Stop sharing" in browser)
+  stream.getAudioTracks()[0].onended = () => stopAudioCapture();
+}
+
+function stopAudioCapture() {
+  if (!audioCapture) return;
+
+  const { stream, audioContext, processor, source, type } = audioCapture;
+
+  source.disconnect();
+  processor.disconnect();
+  audioContext.close();
+  stream.getTracks().forEach(t => t.stop());
+
+  ws.send(JSON.stringify({ type: 'stop_audio' }));
+
+  const btn = type === 'tab' ? 'tab-capture-btn' : 'mic-capture-btn';
+  document.getElementById(btn).classList.remove('active');
+  document.getElementById(btn).textContent = type === 'tab' ? 'Capture Tab Audio' : 'Capture Mic';
+  setAudioStatus('');
+
+  audioCapture = null;
+}
+
+function setAudioStatus(text) {
+  document.getElementById('audio-status').textContent = text;
 }
 </script>
 </body>

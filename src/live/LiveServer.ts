@@ -10,11 +10,13 @@ import { Message } from "../types";
 export interface LiveServerConfig {
   port: number;
   useDeepgram: boolean;
+  allowBrowserAudio: boolean;
 }
 
 const DEFAULT_CONFIG: LiveServerConfig = {
   port: 3000,
   useDeepgram: false,
+  allowBrowserAudio: false,
 };
 
 export class LiveServer {
@@ -36,11 +38,8 @@ export class LiveServer {
       { maxMessages: 12, maxWaitMs: 45000, minMessages: 3 }
     );
 
-    if (this.config.useDeepgram) {
-      this.transcriber = new Transcriber(
-        (result) => this.onTranscript(result),
-        (error) => this.broadcast({ type: "error", message: error.message })
-      );
+    if (this.config.useDeepgram || this.config.allowBrowserAudio) {
+      this.initTranscriber();
     }
   }
 
@@ -90,9 +89,8 @@ export class LiveServer {
       });
     });
 
-    // Start Deepgram if configured
-    if (this.transcriber) {
-      // Default: browser sends 16kHz mono linear16
+    // Start Deepgram eagerly for --mic mode
+    if (this.config.useDeepgram && this.transcriber) {
       await this.transcriber.start({
         encoding: "linear16",
         sampleRate: 16000,
@@ -101,17 +99,26 @@ export class LiveServer {
       console.log("  Deepgram transcription ready");
     }
 
+    const mode = this.config.useDeepgram
+      ? "Microphone (Deepgram STT)"
+      : this.config.allowBrowserAudio
+        ? "Text input + Tab Audio Capture (Deepgram STT)"
+        : "Text input (type messages in the browser)";
+
     server.listen(this.config.port, () => {
       console.log(
         `\n  Live server running at http://localhost:${this.config.port}\n`
       );
-      console.log(
-        this.config.useDeepgram
-          ? "  Mode: Microphone (Deepgram STT)"
-          : "  Mode: Text input (type messages in the browser)"
-      );
+      console.log(`  Mode: ${mode}`);
       console.log("  Open the URL above in your browser to start\n");
     });
+  }
+
+  private initTranscriber(): void {
+    this.transcriber = new Transcriber(
+      (result) => this.onTranscript(result),
+      (error) => this.broadcast({ type: "error", message: error.message })
+    );
   }
 
   private handleClientMessage(ws: WebSocket, msg: any): void {
@@ -120,13 +127,52 @@ export class LiveServer {
         const { speaker, text } = msg;
         if (speaker && text) {
           const message = this.buffer.addMessage(speaker, text);
-          // Broadcast the new message to all clients
           this.broadcast({
             type: "new_message",
             message,
             bufferSize: this.buffer.getBufferSize(),
             totalMessages: this.buffer.getTotalMessages(),
           });
+        }
+        break;
+      }
+
+      case "start_audio": {
+        // Browser wants to start sending audio (tab capture or mic)
+        if (!this.transcriber) {
+          if (!process.env.DEEPGRAM_API_KEY) {
+            ws.send(JSON.stringify({
+              type: "error",
+              message: "DEEPGRAM_API_KEY not set on server. Add it to .env to use audio capture.",
+            }));
+            break;
+          }
+          this.initTranscriber();
+        }
+
+        const sampleRate = msg.sampleRate || 16000;
+        const channels = msg.channels || 1;
+
+        this.transcriber!.start({
+          encoding: "linear16",
+          sampleRate,
+          channels,
+        }).then(() => {
+          console.log(`  Audio capture started (${sampleRate}Hz, ${channels}ch)`);
+          ws.send(JSON.stringify({ type: "audio_ready" }));
+        }).catch((err: any) => {
+          ws.send(JSON.stringify({
+            type: "error",
+            message: `Failed to start transcription: ${err.message}`,
+          }));
+        });
+        break;
+      }
+
+      case "stop_audio": {
+        if (this.transcriber) {
+          this.transcriber.stop();
+          console.log("  Audio capture stopped");
         }
         break;
       }

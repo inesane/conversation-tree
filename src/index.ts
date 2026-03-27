@@ -45,7 +45,8 @@ async function main(): Promise<void> {
 
     case "live": {
       const useMic = args.includes("--mic");
-      await runLive(useMic);
+      const useTab = args.includes("--tab");
+      await runLive(useMic, useTab);
       break;
     }
 

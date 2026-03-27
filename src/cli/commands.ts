@@ -148,7 +148,10 @@ export function runView(): void {
   openInBrowser(VIEW_FILE);
 }
 
-export async function runLive(useDeepgram: boolean = false): Promise<void> {
+export async function runLive(
+  useDeepgram: boolean = false,
+  allowBrowserAudio: boolean = false
+): Promise<void> {
   if (!process.env.GROQ_API_KEY) {
     console.error(
       "Error: GROQ_API_KEY environment variable is required.\nGet a free key at https://console.groq.com/keys"
@@ -168,6 +171,7 @@ export async function runLive(useDeepgram: boolean = false): Promise<void> {
   const server = new LiveServer({
     port: parseInt(process.env.PORT || "3000", 10),
     useDeepgram,
+    allowBrowserAudio: allowBrowserAudio || !useDeepgram,
   });
 
   await server.start();
