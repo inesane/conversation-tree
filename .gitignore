@@ -10,3 +10,4 @@ output/
 *.d.ts
 *.js.map
 !src/**/*.ts
+data/audio/

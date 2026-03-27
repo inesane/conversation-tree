@@ -92,7 +92,12 @@ export class LiveServer {
 
     // Start Deepgram if configured
     if (this.transcriber) {
-      await this.transcriber.start();
+      // Default: browser sends 16kHz mono linear16
+      await this.transcriber.start({
+        encoding: "linear16",
+        sampleRate: 16000,
+        channels: 1,
+      });
       console.log("  Deepgram transcription ready");
     }
 

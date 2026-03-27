@@ -9,6 +9,8 @@ export interface TranscriptResult {
 export class Transcriber {
   private client: DeepgramClient;
   private connection: any = null;
+  private ready: boolean = false;
+  private audioQueue: Buffer[] = [];
   private onTranscript: (result: TranscriptResult) => void;
   private onError: (error: Error) => void;
   private speakerNames: Map<number, string> = new Map();
@@ -36,28 +38,34 @@ export class Transcriber {
     return this.speakerNames.get(speakerId) || `Speaker ${speakerId + 1}`;
   }
 
-  async start(): Promise<void> {
-    const connection = await this.client.listen.v1.connect({
+  async start(audioConfig?: {
+    encoding?: string;
+    sampleRate?: number;
+    channels?: number;
+  }): Promise<void> {
+    const config: Record<string, string> = {
       model: "nova-2",
-      language: "en",
       smart_format: "true",
       diarize: "true",
       punctuate: "true",
-      interim_results: "false",
-      utterance_end_ms: "1500",
-      encoding: "linear16",
-      sample_rate: "16000",
-      channels: "1",
-    } as any);
+    };
+
+    // Set audio format if provided (required for raw PCM streams)
+    if (audioConfig?.encoding) {
+      config.encoding = audioConfig.encoding;
+    }
+    if (audioConfig?.sampleRate) {
+      config.sample_rate = String(audioConfig.sampleRate);
+    }
+    if (audioConfig?.channels) {
+      config.channels = String(audioConfig.channels);
+    }
+
+    const connection = await this.client.listen.v1.connect(config as any);
 
     this.connection = connection;
 
-    connection.on("open", () => {
-      console.log("  Deepgram connection opened");
-    });
-
     connection.on("message", (data: any) => {
-      // V1 message events include transcript results
       if (!data || !data.channel) return;
 
       const transcript = data.channel?.alternatives?.[0];
@@ -81,17 +89,51 @@ export class Transcriber {
 
     connection.on("close", () => {
       console.log("  Deepgram connection closed");
+      this.ready = false;
+    });
+
+    // Connect and wait for open via callback
+    await new Promise<void>((resolve) => {
+      connection.on("open", () => {
+        console.log("  Deepgram connection opened");
+        this.ready = true;
+
+        // Flush queued audio
+        for (const chunk of this.audioQueue) {
+          this.connection.sendMedia(chunk);
+        }
+        this.audioQueue = [];
+        resolve();
+      });
+      connection.connect();
     });
   }
 
   sendAudio(audioData: Buffer): void {
-    if (this.connection) {
-      this.connection.sendMedia(audioData);
+    if (!this.connection) return;
+
+    if (!this.ready) {
+      // Queue audio until connection is ready
+      this.audioQueue.push(audioData);
+      return;
     }
+
+    try {
+      this.connection.sendMedia(audioData);
+    } catch (err: any) {
+      // Socket may have closed — queue it
+      this.ready = false;
+      this.audioQueue.push(audioData);
+    }
+  }
+
+  isReady(): boolean {
+    return this.ready;
   }
 
   stop(): void {
     if (this.connection) {
+      this.ready = false;
       this.connection.close();
       this.connection = null;
     }
