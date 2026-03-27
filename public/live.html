@@ -213,25 +213,6 @@
   }
   #analyze-btn:hover { background: #475569; color: #e2e8f0; }
 
-  /* Tangent alert */
-  #tangent-alert {
-    position: fixed;
-    top: 60px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-100px);
-    background: #451a03;
-    border: 1px solid #f59e0b;
-    border-radius: 10px;
-    padding: 12px 20px;
-    font-size: 13px;
-    color: #fcd34d;
-    z-index: 500;
-    transition: transform 0.4s ease;
-    max-width: 500px;
-    text-align: center;
-  }
-  #tangent-alert.show { transform: translateX(-50%) translateY(0); }
-  #tangent-alert strong { color: #f59e0b; }
 
   /* Detail panel */
   #detail-panel {
@@ -297,8 +278,8 @@
       <span id="message-count">0 messages</span>
     </div>
     <div id="audio-controls">
-      <button id="tab-capture-btn" onclick="toggleTabCapture()">Capture Tab Audio</button>
-      <button id="mic-capture-btn" onclick="toggleMicCapture()">Capture Mic</button>
+      <button id="tab-capture-btn" onclick="toggleTabCapture()">Capture Tab + Mic</button>
+      <button id="mic-capture-btn" onclick="toggleMicCapture()">Mic Only</button>
       <span id="audio-status"></span>
     </div>
     <div id="messages"></div>
@@ -311,10 +292,6 @@
       <div id="input-hint">Enter to send, or use audio capture buttons above.</div>
     </div>
   </div>
-</div>
-
-<div id="tangent-alert">
-  <strong>Tangent Alert!</strong> You're <span id="alert-depth"></span> levels deep. Main topic was: <strong id="alert-main"></strong>
 </div>
 
 <div id="detail-panel">
@@ -348,9 +325,6 @@ ws.onmessage = (e) => {
       break;
     case 'analyzing':
       setStatus('analyzing');
-      break;
-    case 'tangent_alert':
-      showTangentAlert(data.depth, data.mainTopic);
       break;
     case 'error':
       console.error('Server error:', data.message);
@@ -549,17 +523,6 @@ function closeDetail() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 
-// Tangent alert
-let alertTimeout;
-function showTangentAlert(depth, mainTopic) {
-  document.getElementById('alert-depth').textContent = depth;
-  document.getElementById('alert-main').textContent = mainTopic;
-  const el = document.getElementById('tangent-alert');
-  el.classList.add('show');
-  clearTimeout(alertTimeout);
-  alertTimeout = setTimeout(() => el.classList.remove('show'), 8000);
-}
-
 function esc(s) {
   const d = document.createElement('div');
   d.textContent = s || '';
@@ -575,26 +538,66 @@ async function toggleTabCapture() {
     stopAudioCapture();
     return;
   }
-  if (audioCapture) stopAudioCapture(); // stop mic if running
+  if (audioCapture) stopAudioCapture();
 
   try {
-    // Request tab audio capture — user picks which tab to share
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: false,
+    // Get tab audio
+    const tabStream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
       audio: true,
+      preferCurrentTab: false,
     });
 
-    // Check we actually got an audio track
-    if (stream.getAudioTracks().length === 0) {
-      setAudioStatus('No audio track — make sure you check "Share tab audio"');
-      stream.getTracks().forEach(t => t.stop());
-      return;
+    // Discard video track
+    tabStream.getVideoTracks().forEach(t => t.stop());
+
+    const hasTabAudio = tabStream.getAudioTracks().length > 0;
+
+    // Also get mic audio
+    let micStream;
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true }
+      });
+    } catch (micErr) {
+      // Mic denied — use tab only if we have it
+      if (!hasTabAudio) {
+        setAudioStatus('No audio — tab had no audio and mic was denied');
+        tabStream.getTracks().forEach(t => t.stop());
+        return;
+      }
     }
 
-    // Stop the video track if one was included (some browsers force it)
-    stream.getVideoTracks().forEach(t => t.stop());
+    // Merge both streams into one using AudioContext
+    const audioContext = new AudioContext();
+    const destination = audioContext.createMediaStreamDestination();
 
-    await startAudioPipeline(stream, 'tab');
+    if (hasTabAudio) {
+      const tabSource = audioContext.createMediaStreamSource(tabStream);
+      tabSource.connect(destination);
+    }
+
+    if (micStream) {
+      const micSource = audioContext.createMediaStreamSource(micStream);
+      micSource.connect(destination);
+    }
+
+    // The merged stream
+    const mergedStream = destination.stream;
+
+    // Store extra streams for cleanup
+    mergedStream._extraStreams = [tabStream, micStream].filter(Boolean);
+    mergedStream._extraContext = audioContext;
+
+    const label = hasTabAudio && micStream ? 'Tab + Mic' : hasTabAudio ? 'Tab only' : 'Mic only';
+    setAudioStatus('Capturing: ' + label);
+
+    await startAudioPipeline(mergedStream, 'tab');
+
+    // Handle tab sharing ending
+    if (hasTabAudio) {
+      tabStream.getAudioTracks()[0].onended = () => stopAudioCapture();
+    }
   } catch (err) {
     if (err.name === 'NotAllowedError') {
       setAudioStatus('Tab sharing cancelled');
@@ -622,10 +625,14 @@ async function toggleMicCapture() {
 }
 
 async function startAudioPipeline(stream, type) {
-  const sampleRate = 16000;
+  // Use default AudioContext sample rate — Chrome won't resample getDisplayMedia streams
+  // to a custom rate reliably, which causes silence
+  const audioContext = new AudioContext();
+  const actualSampleRate = audioContext.sampleRate;
+  console.log('AudioContext sample rate:', actualSampleRate);
 
-  // Tell server to start Deepgram
-  ws.send(JSON.stringify({ type: 'start_audio', sampleRate: sampleRate, channels: 1 }));
+  // Tell server to start Deepgram with the actual sample rate
+  ws.send(JSON.stringify({ type: 'start_audio', sampleRate: actualSampleRate, channels: 1 }));
 
   // Wait for server to confirm Deepgram is ready
   await new Promise((resolve) => {
@@ -636,25 +643,34 @@ async function startAudioPipeline(stream, type) {
         if (msg.type === 'error') {
           setAudioStatus('Server error: ' + msg.message);
           stream.getTracks().forEach(t => t.stop());
+          audioContext.close();
         }
         resolve();
       }
     };
     ws.addEventListener('message', handler);
-    // Timeout fallback
     setTimeout(() => { ws.removeEventListener('message', handler); resolve(); }, 5000);
   });
 
-  // Set up AudioContext to convert to 16kHz mono PCM
-  const audioContext = new AudioContext({ sampleRate: sampleRate });
   const source = audioContext.createMediaStreamSource(stream);
 
-  // Use ScriptProcessorNode (deprecated but widely supported; AudioWorklet needs separate file)
+  // Use ScriptProcessorNode to get raw PCM
   const bufferSize = 4096;
   const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
 
+  let chunkCount = 0;
   processor.onaudioprocess = (e) => {
     const inputData = e.inputBuffer.getChannelData(0);
+
+    // Check if audio is actually non-silent
+    if (chunkCount < 3) {
+      let maxVal = 0;
+      for (let i = 0; i < inputData.length; i++) {
+        maxVal = Math.max(maxVal, Math.abs(inputData[i]));
+      }
+      console.log('Audio chunk', chunkCount, 'max amplitude:', maxVal.toFixed(4));
+    }
+    chunkCount++;
 
     // Convert float32 to int16 PCM
     const pcm = new Int16Array(inputData.length);
@@ -697,11 +713,19 @@ function stopAudioCapture() {
   audioContext.close();
   stream.getTracks().forEach(t => t.stop());
 
+  // Clean up extra streams from merged tab+mic capture
+  if (stream._extraStreams) {
+    stream._extraStreams.forEach(s => s.getTracks().forEach(t => t.stop()));
+  }
+  if (stream._extraContext) {
+    stream._extraContext.close();
+  }
+
   ws.send(JSON.stringify({ type: 'stop_audio' }));
 
   const btn = type === 'tab' ? 'tab-capture-btn' : 'mic-capture-btn';
   document.getElementById(btn).classList.remove('active');
-  document.getElementById(btn).textContent = type === 'tab' ? 'Capture Tab Audio' : 'Capture Mic';
+  document.getElementById(btn).textContent = type === 'tab' ? 'Capture Tab + Mic' : 'Mic Only';
   setAudioStatus('');
 
   audioCapture = null;

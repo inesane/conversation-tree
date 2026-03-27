@@ -246,19 +246,6 @@ export class LiveServer {
         });
       }
 
-      // Check tangent depth and alert
-      const active = tree.getActiveTopic();
-      if (active.depth >= 3 && active.topicType !== "root") {
-        const rootTopic = tree
-          .getPath(active.id)
-          .find((n) => n.depth === 1);
-        this.broadcast({
-          type: "tangent_alert",
-          currentTopic: active.label,
-          depth: active.depth,
-          mainTopic: rootTopic?.label || "the main topic",
-        });
-      }
     } catch (error: any) {
       this.broadcast({
         type: "error",

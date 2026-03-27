@@ -230,6 +230,7 @@ Processing time includes rate limiting delays (2.2s between API calls). Actual L
 - **Better return detection** — a dedicated second-pass analysis to catch implicit returns that the single-pass approach misses
 - **Conversation replay** — step through the conversation message by message and watch the tree build up in the web UI
 - **Multi-conversation memory** — track topics across multiple conversations over days/weeks. "We talked about X last Tuesday but never resolved it"
+- **Google Meet bot** — Puppeteer-based bot that joins a Meet call automatically and captures audio without needing tab sharing
 - **Collaborative mode** — multiple people in a meeting see the live tree and can manually mark topics as completed or flag things to return to
 - **Slack/Discord integration** — analyze channel conversations or threads directly
 - **Export formats** — export the tree as markdown, Mermaid diagram, or Obsidian-compatible notes
