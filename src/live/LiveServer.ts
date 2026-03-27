@@ -35,7 +35,8 @@ export class LiveServer {
 
     this.buffer = new MessageBuffer(
       (messages, allMessages) => this.onBufferFlush(messages, allMessages),
-      { maxMessages: 12, maxWaitMs: 45000, minMessages: 3 }
+      { maxMessages: 12, maxWaitMs: 45000, minMessages: 3, mergePauseMs: 2000 },
+      (message, isNew) => this.onMessageUpdate(message, isNew)
     );
 
     if (this.config.useDeepgram || this.config.allowBrowserAudio) {
@@ -114,6 +115,15 @@ export class LiveServer {
     });
   }
 
+  private onMessageUpdate(message: Message, isNew: boolean): void {
+    this.broadcast({
+      type: isNew ? "new_message" : "message_updated",
+      message,
+      bufferSize: this.buffer.getBufferSize(),
+      totalMessages: this.buffer.getTotalMessages(),
+    });
+  }
+
   private initTranscriber(): void {
     this.transcriber = new Transcriber(
       (result) => this.onTranscript(result),
@@ -126,13 +136,7 @@ export class LiveServer {
       case "text_message": {
         const { speaker, text } = msg;
         if (speaker && text) {
-          const message = this.buffer.addMessage(speaker, text);
-          this.broadcast({
-            type: "new_message",
-            message,
-            bufferSize: this.buffer.getBufferSize(),
-            totalMessages: this.buffer.getTotalMessages(),
-          });
+          this.buffer.addMessage(speaker, text);
         }
         break;
       }
@@ -204,14 +208,7 @@ export class LiveServer {
       ? this.transcriber.getSpeakerName(result.speaker)
       : `Speaker ${result.speaker + 1}`;
 
-    const message = this.buffer.addMessage(speakerName, result.text);
-
-    this.broadcast({
-      type: "new_message",
-      message,
-      bufferSize: this.buffer.getBufferSize(),
-      totalMessages: this.buffer.getTotalMessages(),
-    });
+    this.buffer.addMessage(speakerName, result.text);
   }
 
   private async onBufferFlush(
